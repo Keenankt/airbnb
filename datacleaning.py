@@ -1,7 +1,9 @@
 ## import packages 
 import pandas as pd
 import numpy as np
+import scipy
 import matplotlib.pyplot as plt
+pd.options.display.max_colwidth = None
 
 ## read data
 df = pd.read_csv("listings.csv")
@@ -9,8 +11,6 @@ df = pd.read_csv("listings.csv")
 # print(df.describe()) ## overview of dataset shape
 ## de duplicate using address
 df = df.drop_duplicates(subset=['Address_line_1']) # removes ~30k results, scraper likely picks up surrounding postcodes each iteration
-
-# print(df.iloc[108]) ## trouble shooting
 
 ##########################################
 ## cleaning data
@@ -95,21 +95,58 @@ df['Address_line_2'].replace(to_replace={30043004 : 3004}, inplace=True) ## repl
 
 
 ## cleaning address price data 
+df['Price'].replace(to_replace='\S*?[pP][cC][mM]', value='', regex=True, inplace=True) # removing per cubic meter from listing
+df['Price'].replace(to_replace='\S*?\s[pP][cC][mM]', value='', regex=True, inplace=True)
+df['Price'].replace(to_replace='\S*?[pP]\.[cC]\.[mM]', value='', regex=True, inplace=True)
+df['Price'].replace(to_replace='\S*?\s[pP]\.[cC]\.[mM]', value='', regex=True, inplace=True)
+df['Price'].replace(to_replace='\S*?[pP]er\s[cC]ubic', value='', regex=True, inplace=True)
+df['Price'].replace(to_replace='\S*?\s[pP]er\s[cC]ubic', value='', regex=True, inplace=True)
 
-print(df.iloc[79])
-df['Price'].replace(to_replace='[a-zA-Z$,|]', value='', regex=True, inplace=True)
-df['Price'] = df['Price'].str.replace(' ', '',)
-df['Price'].replace(to_replace='^\.', value='', regex=True, inplace=True)
+
+df['Price'].replace(to_replace="[a-zA-Z$|!//&()\-+:\*',]", value='', regex=True, inplace=True) # strip text and special characters not including . which can denote decimals
+df['Price'] = df['Price'].str.replace(' ', '',) # remove blank space
+df['Price'].replace(to_replace='\..*', value='', regex=True, inplace=True) # strip characters after . to get integer price
+df['Price'] = df['Price'].str.replace(' ', '',) # remove blank space
+
+df['Price'] = pd.to_numeric(df['Price']) # convert to numeric
+
+df.dropna(subset='Price',axis=0, inplace=True) # drop listings with no price
+
+df = df[df['Price'] <= 6000] # dropping listings over $6k/week. after investigation most are listings with negotiable prices,
+### which truncated make absurdly high values. outside of scope of investigation, drops about ~200 listings
+
+df = df[df['Price'] > 100] # dropping listings under $100/week after investigation almost all listings are car spaces, ~20 listings
+
+########### END OF CLEANING #########
+#####################################
+
+######### ANALYSIS
+print(df.describe())
+
+plt.subplot(2,2,1)
+plt.scatter(df['Bedrooms'],df['Price'])
+plt.xlabel('Number of Bedrooms')
+plt.ylabel('Price per Week')
+
+plt.subplot(2,2,2)
+plt.scatter(df['Bathrooms'],df['Price'])
+plt.xlabel('Number of Bathrooms')
+plt.ylabel('Price per Week')
+
+plt.subplot(2,2,3)
+plt.scatter(df['Car_spaces'],df['Price'])
+plt.xlabel('Number of Car spaces')
+plt.ylabel('Price per Week')
+
+plt.subplot(2,2,4)
+plt.scatter(df['Building_type'],df['Price'])
+plt.xlabel('Building Type Category')
+plt.ylabel('Price per Week')
+plt.text(0.5,0.5,"1: Home, 2: Semi-detached, 3: Apartment")
+
+plt.show()
 
 
-print(df['Price'].iloc[79])
-#df['Price'] = np.where(df['Price'].str.isnumeric(), df["Price"], df['Price'].str.replace('[a-zA-Z$,]','',regex=True))
-#df['Price'] = df['Price'].str.strip()
-#df['Price'] = np.where(df['Price'].str.isnumeric(), df["Price"], df['Price'].str.replace('^.','',regex=True))
-
-df['Price'] = pd.to_numeric(df['Price'])
-#print(df.describe())
-#print(df[df.Price > 5000])
 
 
 
