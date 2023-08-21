@@ -1,6 +1,7 @@
 ## import packages 
 import pandas as pd
 import numpy as np
+import geopy
 
 ## read data
 df = pd.read_csv("airbnb_listings.csv")
@@ -45,8 +46,23 @@ def weekly_price(price):  ## apply formula for weekly price
     return price*7
 df['price'] = df['price'].apply(weekly_price) # change night price to weekly price equiv for rent
 
+### change lat/long data to postcode to compare against domain listings
+
+def get_postcode(df, geolocator, lat_field, lon_field):
+    location = geolocator.reverse((df[lat_field], df[lon_field]))
+    try:
+        location = location.raw['address']['postcode'] 
+    except:
+        location = ['Not Found'][0000]
+    print(location)
+    return location
+
+geolocator = geopy.Nominatim(user_agent='KTunhla')
+
+df['postcode'] = df.apply(get_postcode, axis=1, geolocator=geolocator, lat_field='latitude', lon_field='longitude')
+
 ## create final dataframe and write cleaned data
-df = df[['price','bedrooms','latitude','longitude','host_listings_count']] 
+df = df[['price','bedrooms','postcode','latitude','longitude','host_listings_count']] 
 df.to_csv('airbnb_listings_clean.csv', index=False, encoding='utf-8')
 
 
