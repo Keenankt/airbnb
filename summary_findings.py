@@ -73,5 +73,5 @@ start_view.zoom = 10.5
 start_view.bearing = 242.5
 
 render = pydeck.Deck(layers=[layer_airbnb,layer_rental], map_style='dark', initial_view_state=start_view)
-render.to_html('airbnb.html')
+## render.to_html('airbnb.html')
 
