@@ -1,4 +1,4 @@
-Price,Bedrooms,Bathrooms,Car_spaces,Building_type,Postcode
+price,bedrooms,bathrooms,car_spaces,building_type,postcode
 500.0,1.0,1,0,1,3000
 400.0,1.0,1,0,1,3000
 400.0,1.0,1,0,1,3000
